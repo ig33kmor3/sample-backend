@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1")
-@CrossOrigin(origins = {"http://localhost:4200", "https://api.curiousquirrel.io"})
+@CrossOrigin(origins = {"http://localhost:4200", "https://www.curiousquirrel.io"})
 public class CarController {
 
     public CarController() { }
