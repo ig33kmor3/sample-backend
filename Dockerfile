@@ -9,4 +9,4 @@ FROM amazoncorretto:11.0.8
 WORKDIR /app
 COPY --from=builder /app/target/sample-backend-release.jar .
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx512m", "-jar", "sample-backend-release.jar"]
+ENTRYPOINT ["java", "-jar", "sample-backend-release.jar"]
