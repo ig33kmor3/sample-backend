@@ -1,0 +1,31 @@
+version: 0.2
+
+env:
+  variables:
+    BUILD_VERSION: 1.0.0
+  parameter-store:
+    ECR_REPOSITORY_SAMPLE_BACKEND: /CodeBuild/ECR_REPOSITORY_SAMPLE_BACKEND
+
+phases:
+  install:
+    commands:
+      - echo "Configuring Elastic Container Registry"
+      - $(aws ecr get-login --no-include-email --region us-west-2)
+  pre_build:
+    commands:
+      - echo "Executing Test ..."
+      - mvn test
+  build:
+    commands:
+      - echo "Starting Build Phase ..."
+      - |
+        docker build -t ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION .
+  post_build:
+    commands:
+      - echo "Post-Build Phase ..."
+      - docker push ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION
+      -
+artifacts:
+  files:
+    - appspec.yml
+    - pipeline/*
