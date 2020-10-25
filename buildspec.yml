@@ -24,7 +24,3 @@ phases:
     commands:
       - echo "Post-Build Phase ..."
       - docker push $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION
-      -
-artifacts:
-  files:
-    - appspec.yml
