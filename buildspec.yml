@@ -19,13 +19,12 @@ phases:
     commands:
       - echo "Starting Build Phase ..."
       - |
-        docker build -t ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION .
+        docker build -t $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION .
   post_build:
     commands:
       - echo "Post-Build Phase ..."
-      - docker push ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION
+      - docker push $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION
       -
 artifacts:
   files:
     - appspec.yml
-    - pipeline/*
