@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    BUILD_VERSION: 1.0.0
+    BUILD_VERSION: 1.0.1
   parameter-store:
     ECR_REPOSITORY_SAMPLE_BACKEND: /CodeBuild/ECR_REPOSITORY_SAMPLE_BACKEND
 
@@ -18,9 +18,13 @@ phases:
   build:
     commands:
       - echo "Starting Build Phase ..."
-      - |
-        docker build -t $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION .
+      - docker build -t $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION .
+      - printf '[{"name":"sample-backend","imageUri":"%s"}]' $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION > imagedefinitions.json
   post_build:
     commands:
       - echo "Post-Build Phase ..."
       - docker push $ECR_REPOSITORY_SAMPLE_BACKEND:$BUILD_VERSION
+
+artifacts:
+  files:
+    - imagedefinitions.json
