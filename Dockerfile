@@ -5,7 +5,7 @@ COPY . ./
 RUN mvn clean package
 
 # create container to run java webapi and set environment variables
-FROM amazoncorretto:11.0.8
+FROM amazoncorretto:17-alpine-jdk
 WORKDIR /app
 COPY --from=builder /app/target/sample-backend-release.jar .
 EXPOSE 8080
