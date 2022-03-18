@@ -24,6 +24,7 @@ public class CarController {
         carArrayList.add(new Car("Toyota", "Tacoma", "2018"));
         carArrayList.add(new Car("Ford", "F-150", "2015"));
         carArrayList.add(new Car("Dodge", "Ram", "2016"));
+        carArrayList.add(new Car("Telsa", "Model Y", "2022"));
         return ResponseEntity.ok(carArrayList);
     }
 }

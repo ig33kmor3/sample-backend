@@ -1,0 +1,115 @@
+name: release pipeline
+
+# start build on release branch
+on:
+  push:
+    branches:
+      - development
+
+env:
+  BUILD_VERSION: 1.0.1
+  CICD_ROLE: ${{ secrets.CICD_ROLE }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  DEFINITION_NAME: ${{ secrets.DEFINITION_NAME }}
+  ECS_SERVICE: ${{ secrets.ECS_SERVICE }}
+  ECS_CLUSTER: ${{ secrets.ECS_CLUSTER }}
+  CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+
+# list of jobs
+jobs:
+  # test job for java spring boot
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # clone repository on release
+      - name: clone repository on release
+        uses: actions/checkout@v3
+      # set up JDK 17 for x64
+      - name: set up JDK 17 for x64
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'microsoft'
+          cache: 'maven'
+          architecture: x64
+      # test and build with maven
+      - name: test and build with maven
+        run: mvn --batch-mode --update-snapshots verify
+      # upload docker artifact
+      - name: upload docker artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-build-artifacts
+          path: |
+            target/sample-backend-release.jar
+            Dockerfile
+          retention-days: 1
+  # build and push docker container to ECS
+  build_container:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # configure aws credentials
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ env.CICD_ROLE }}
+          aws-region: us-west-2
+      # login to Amazon ECR
+      - name: login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      # download artifact
+      - name: download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-build-artifacts
+      # build and tag image to Amazon ECR
+      - name: build and tag image to Amazon ECR
+        run: |
+          docker build -t $ECR_REPOSITORY:$BUILD_VERSION .
+          echo "::set-output name=image::$ECR_REPOSITORY:$BUILD_VERSION"
+      # push image to Amazon ECR
+      - name: push image to Amazon ECR
+        run: docker push $ECR_REPOSITORY:$BUILD_VERSION
+  # deploy container to production
+  deploy:
+    needs: build_container
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # configure aws credentials
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ env.CICD_ROLE }}
+          aws-region: us-west-2
+      # create task definition
+      - name: create task definition
+        run: aws ecs describe-task-definition --task-definition $DEFINITION_NAME --query taskDefinition > imagedefinitions.json
+      # fill in the new image ID in the Amazon ECS task definition
+      - name: fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: imagedefinitions.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.ECR_REPOSITORY }}:${{ env.BUILD_VERSION }}
+      # test deployment
+      - name: test deployment
+        run: cat $TASK_PATH
+        env:
+          TASK_PATH: ${{ steps.task-def.outputs.task-definition }}
+      # deploy Amazon ECS task definition
+      - name: deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
