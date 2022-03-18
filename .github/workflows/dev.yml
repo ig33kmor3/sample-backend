@@ -93,7 +93,7 @@ jobs:
       - name: create task definition
         run: |
           aws ecs describe-task-definition --task-definition $DEFINITION_NAME --query taskDefinition \
-          jq 'del(.taskDefinitionArn)' | jq 'del(.compatibilities)' | jq 'del(.requiresAttributes)' | jq 'del(.revision)' \
+          | jq 'del(.taskDefinitionArn)' | jq 'del(.compatibilities)' | jq 'del(.requiresAttributes)' | jq 'del(.revision)' \
           | jq 'del(.status)' | jq 'del(.registeredAt)' | jq 'del(.registeredBy)' > imagedefinitions.json
       # fill in the new image ID in the Amazon ECS task definition
       - name: fill in the new image ID in the Amazon ECS task definition
